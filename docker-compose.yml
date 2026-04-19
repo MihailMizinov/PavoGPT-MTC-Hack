@@ -1,0 +1,75 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MAX_QUEUE=128
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    command: serve
+    restart: unless-stopped
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        echo "Waiting for Ollama to be ready..."
+        sleep 5
+        if ollama list | grep -q "qwen2.5-coder:3b-instruct-q4_K_M"; then
+          echo "Model already present."
+        else
+          echo "Model not found. Pulling qwen2.5-coder:3b-instruct-q4_K_M ..."
+          ollama pull qwen2.5-coder:3b-instruct-q4_K_M
+          echo "Pull completed."
+        fi
+        echo "Initialization finished."
+    restart: on-failure
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.backend
+    container_name: backend
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - MODEL_NAME=qwen2.5-coder:3b-instruct-q4_K_M
+    volumes:
+      - ./ml/src:/app/ml/src
+      - ./backend:/app/backend
+      - ./tests:/app/tests
+    ports:
+      - "8000:8000"
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    environment:
+      - BACKEND_URL=http://backend:8000
+    volumes:
+      - ./frontend/public:/app/public
+    ports:
+      - "8001:8001"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

@@ -1,36 +1,82 @@
-# PAvoGPT-MTC-Hack
-# Local Lua Agent — AI code generator for Lua
+# 🧠 Local Lua Agent — AI-генератор кода на Lua
 
-A system for locally generating Lua code in natural language. Works completely offline, without an external API. Includes an agent with iterative validation and error correction.
+Система для локальной генерации Lua-кода из естественного языка. Работает полностью offline, без внешних API. Включает агента с итеративной валидацией и исправлением ошибок.
 
-## Screenshots 
+## 📦 Требования
 
-### Main screen
+- **Docker Desktop**
+- **8 GB VRAM** (для работы модели)
+- **ОС**: Windows / macOS / Linux
 
-![](images/1.png)
 
-### Chatting
 
-![](images/2.png)
+## 🚀 Быстрый старт
 
-### Ofline usage
+1. **Скачайте и распакуйте** архив с проектом в любую папку.
 
-![](images/3.png)
+2. **Откройте терминал** (командную строку) и перейдите в эту папку:
+   ```bash
+   cd C:\путь\к\папке\проекта
+   ```
 
-### Document reading
+3. **Запустите все сервисы одной командой**:
+   ```bash
+   docker-compose up --build
+   ```
 
-![](images/4.png)
+   > При первом запуске автоматически скачается модель `qwen2.5-coder:3b` (≈2 GB). Это займёт несколько минут.
 
-## Quick Start
+4. **Откройте браузер** и перейдите по адресу:  
+   👉 **http://localhost:8001**
 
-1. Download and unzip the project archive in any application.
+   Вы увидите чат-интерфейс. Напишите задачу на русском или английском, например:  
+   *«Напиши функцию на Lua, которая сортирует массив пузырьком»*
 
-2. Open a terminal (command key) and turn on this indicator:
-``` bash
-cd C:\path\to\project\folder
+## 🧩 Что входит в систему
+
+| Сервис | Порт | Описание |
+|--------|------|----------|
+| **Frontend** (Chainlit) | `8001` | Красивый чат с подсветкой кода |
+| **Backend** (FastAPI) | `8000` | API, агентная логика, валидация |
+| **LLM** (Ollama + Qwen2.5-Coder 7B) | `11434` | Генерация кода, исправление ошибок |
+
+Все сервисы поднимаются в Docker Compose. Данные не покидают ваш компьютер.
+
+
+Пиковое потребление VRAM не превышает 8 GB.
+
+
+## 📝 Пример использования
+
+**Пользователь:**  
+> Напиши функцию, которая вычисляет факториал числа на Lua
+
+**Агент генерирует код:**
+```lua
+function factorial(n)
+    if n == 0 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
 ```
 
-3. Run all services in one pair:
-``` bash
-docker-compose --build
+При синтаксической ошибке агент автоматически исправит её (до 3 попыток).
+
+## 📂 Структура проекта
+
 ```
+.
+├── backend/          # FastAPI + агент
+├── frontend/         # Chainlit UI + кастомный CSS
+├── ml/               # Ollama + модель
+├── docker-compose.yml
+└── README.md
+```
+
+## 🏁 Для жюри
+
+- **Локальность**: всё работает внутри Docker, без внешних запросов.
+- **Агентность**: цикл генерация → валидация → исправление.
+- **Ресурсы**: вписывается в 8 GB VRAM.
